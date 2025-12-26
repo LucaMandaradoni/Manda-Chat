@@ -1,5 +1,7 @@
 #include "cliente.h"
 
+extern t_log* logger;
+extern t_config* config;    
 
 int crear_conexion(char *ip, char *puerto){
     struct addrinfo hints, *server_info;
@@ -32,6 +34,8 @@ int crear_conexion(char *ip, char *puerto){
     }
 
     freeaddrinfo(server_info);
+
+    log_info(logger, "se creo la conexion al servidor %s : %s", ip, puerto);
     return socket_cliente;
 }
 
@@ -59,3 +63,34 @@ t_config* iniciar_config(char* rutaConfig){
 
 
 
+void enviar_mensajes(const char* nombre, int socket){
+    
+    while(1){
+        char mensaje[512];
+        char mensaje_final[512];
+        char* nombre_usuario = nombre;
+        printf("Ingrese su mensaje: ");
+        fflush(stdout);
+        fgets(mensaje, sizeof(mensaje), stdin);
+        mensaje[strcspn(mensaje, "\n")] = '\0';
+        snprintf(mensaje_final, sizeof(mensaje_final),
+                "%s: %s", nombre_usuario, mensaje);
+
+
+        log_info(logger, "Enviando mensaje: %s", mensaje_final);
+
+        int offset = 0;
+        int largo_mensaje = strlen(mensaje_final) + 1;
+        int tam_buffer = sizeof(int) + largo_mensaje;
+        void *buffer = malloc(tam_buffer);
+        memcpy(buffer + offset, &largo_mensaje, sizeof(int));
+        offset += sizeof(int);
+        memcpy(buffer + offset, mensaje_final, largo_mensaje);
+        offset += largo_mensaje;
+
+        send(socket, &tam_buffer, sizeof(int), 0);
+        send(socket, buffer, tam_buffer, 0);
+        free(buffer);
+
+    }
+}

@@ -20,3 +20,5 @@ int crear_conexion(char *ip, char *puerto);
 t_log* iniciar_logger(void);
 t_config* iniciar_config(char* rutaConfig);
 
+void enviar_mensajes(const char* nombre, int socket);
+

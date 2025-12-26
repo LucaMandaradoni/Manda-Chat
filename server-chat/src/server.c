@@ -1,5 +1,10 @@
 #include "server.h"
 
+extern t_log* logger;
+extern t_config* config;
+extern t_list* usuarios_conectados;
+    
+pthread_mutex_t mutex_conectados;
 
 int iniciar_servidor(char *puerto) {
     struct addrinfo hints, *servinfo;
@@ -51,8 +56,6 @@ int iniciar_servidor(char *puerto) {
     return socket_escucha;
 }
 
-
-
 int esperar_clientes(int socket_servidor){
 
     int socket_cliente = accept(socket_servidor, NULL, NULL);
@@ -84,3 +87,141 @@ t_config* iniciar_config(char* rutaConfig){
 
 
 
+void* aceptar_clientes(void* arg){
+    int servidor_escucha = *(int*)arg;
+    //free(arg);
+
+    log_debug(logger, "Listo para aceptar QUERYS y WORKERS");
+
+    pthread_mutex_init(&mutex_conectados, NULL);
+
+    
+    while(1){
+        int* fd_conexion_ptr = malloc(sizeof(int));
+        *fd_conexion_ptr = esperar_clientes(servidor_escucha);
+        //log_info(logger, "Se conecto un cliente!!");
+        
+        size_t bytes;
+        int32_t handshake;
+        int32_t resultOk = 0;
+        int32_t resultError = -1;
+
+
+
+        //HANDSHAKE
+        int tam_buffer;
+        int offset = 0;
+        int tamanio_nombre_user;
+        char* nombre_user;
+
+        recv(*fd_conexion_ptr, &tam_buffer, sizeof(int), MSG_WAITALL);
+        //log_info(logger, "Tam buffer recibido: %d", tam_buffer);
+
+        char* buffer = malloc(tam_buffer);
+        if (recv(*fd_conexion_ptr, buffer, tam_buffer, MSG_WAITALL) <= 0) {
+            log_error(logger, "Error recibiendo buffer");
+            free(buffer);
+            close(*fd_conexion_ptr);
+            free(fd_conexion_ptr);
+            break;
+        }
+
+        //log_info(logger, "Recibo buffer");
+
+        memcpy(&tamanio_nombre_user, buffer + offset, sizeof(int));
+        offset += sizeof(int);
+
+        if (tamanio_nombre_user <= 0 || tamanio_nombre_user > 1024) {
+            log_error(logger, "Tamaño de nombre inválido: %d", tamanio_nombre_user);
+            free(buffer);
+            close(*fd_conexion_ptr);
+            free(fd_conexion_ptr);
+            continue;
+        }
+
+        
+        // nombre_user = malloc(tamanio_nombre_user);
+        // memcpy(nombre_user, buffer + offset, tamanio_nombre_user);
+
+        nombre_user = malloc(tamanio_nombre_user + 1);
+        memcpy(nombre_user, buffer + offset, tamanio_nombre_user);
+
+        offset += tamanio_nombre_user;
+
+        log_info(logger, "Bienvenido: %s", nombre_user);
+
+
+        t_user* usuario = malloc(sizeof(t_user));
+        usuario->nombre = nombre_user;
+        usuario->socket = *fd_conexion_ptr;
+
+        //log_info(logger, "Agregando usuario a la lista de conectados");
+
+        pthread_mutex_lock(&mutex_conectados);
+        list_add(usuarios_conectados, usuario);
+        pthread_mutex_unlock(&mutex_conectados);
+
+        //log_info(logger, "Usuario %s agregado a la lista de conectados", nombre_user);
+
+        
+
+
+        pthread_t hilo_atender_query;
+        pthread_create(&hilo_atender_query, NULL, (void*) atender_cliente, fd_conexion_ptr);
+        pthread_detach(hilo_atender_query);
+    
+    }
+}
+
+
+void atender_cliente(void* arg){
+    int fd_conexion_ptr = *(int*)arg;    
+    free(arg);
+
+
+    while(1){
+
+        //ACA RECIBIMOS LOS MENSAJES DE LOS  CLIENTES 
+        //Y LOS REENVIAMOS A TODOS LOS DEMAS
+        int offset = 0;
+        int tam_buffer;
+        char* mensaje;
+        //log_info(logger, "Esperando mensajes de los clientes...");
+
+        if (recv(fd_conexion_ptr, &tam_buffer, sizeof(int), MSG_WAITALL) <= 0) {
+            log_info(logger, "No hay mensajes nuevos de este cliente %d", fd_conexion_ptr);
+            break;              
+        }
+
+        void* buffer = malloc(tam_buffer);
+        if (recv(fd_conexion_ptr, buffer, tam_buffer, MSG_WAITALL) <= 0) {
+            log_error(logger, "Error recibiendo buffer del cliente %d", fd_conexion_ptr);
+            free(buffer);
+            close(fd_conexion_ptr);
+            break;
+        }
+
+        memcpy(&tam_buffer, buffer + offset, sizeof(int));
+        offset += sizeof(int);
+        mensaje = malloc(tam_buffer);
+        memcpy(mensaje, buffer + offset, tam_buffer);
+        offset += tam_buffer;
+        free(buffer);
+        log_info(logger, "%s", mensaje);
+
+
+
+
+        pthread_mutex_lock(&mutex_conectados);
+        for(int i =0; i<list_size(usuarios_conectados); i++){
+            t_user* usuario = list_get(usuarios_conectados, i);
+            int socket_cliente = usuario->socket;
+
+            
+            pthread_mutex_unlock(&mutex_conectados);
+
+        }
+              
+    }
+
+}

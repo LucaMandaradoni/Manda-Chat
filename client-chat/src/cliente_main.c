@@ -12,15 +12,42 @@ int main() {
     char* ip        = config_get_string_value(config, "IP_SERVER");
 
 
+    char nombre[50];
+
+    printf("Ingrese su nombre: ");
+    fflush(stdout);   // importante si usás logs / buffers
+
+    fgets(nombre, sizeof(nombre), stdin);
+
+    // eliminar el '\n' que agrega fgets
+    nombre[strcspn(nombre, "\n")] = '\0';
+
+    printf("Hola %s!\n", nombre);
+
     int socket_server = crear_conexion(ip, puerto);
 
-    log_info(logger, "se creo la conexion al servidor %s : %s", ip, puerto);
-
-
-    printf("CLIENTE: HOLA\n");
-
-
     
+    //enviarmos el nombre al servidor
+    int offset = 0;
+    int largo_nombre = strlen(nombre) + 1;
+    int tam_buffer = sizeof(int) + largo_nombre;
+    void *buffer = malloc(tam_buffer);
+
+    memcpy(buffer + offset, &largo_nombre, sizeof(int));
+    offset += sizeof(int);
+    memcpy(buffer + offset, nombre, largo_nombre);
+    offset += largo_nombre;
+    
+    //log_info(logger, "enviando nombre al servidor: %s", nombre);
+    //log_info(logger, "tam buffer: %d", tam_buffer);
+    send(socket_server, &tam_buffer, sizeof(int), 0);
+    send(socket_server, buffer, tam_buffer, 0);
+    free(buffer);
+
+
+    //TODO HILO ESCUCHAR MENSAJES DE OTROS
+
+    enviar_mensajes(nombre, socket_server);
 
     return 0;
 } 

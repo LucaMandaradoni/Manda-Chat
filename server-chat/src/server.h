@@ -17,6 +17,11 @@
 #include <sys/types.h>
 #include <signal.h>
 
+typedef struct{
+    char* nombre;
+    int socket;
+}t_user;
+
 
 
 //HEADERS PARA SOCKETS:
@@ -25,6 +30,7 @@ int iniciar_servidor(char* puerto);
 t_log* iniciar_logger(void);
 t_config* iniciar_config(char* rutaConfig);
 
-
+void* aceptar_clientes(void* arg);
+void atender_cliente(void* arg);
 
 #endif /* SERVER_H */
