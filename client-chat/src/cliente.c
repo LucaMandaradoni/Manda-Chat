@@ -73,8 +73,8 @@ void enviar_mensajes(const char* nombre, int socket){
         fflush(stdout);
         fgets(mensaje, sizeof(mensaje), stdin);
         mensaje[strcspn(mensaje, "\n")] = '\0';
-        snprintf(mensaje_final, sizeof(mensaje_final),
-                "%s: %s", nombre_usuario, mensaje);
+        // snprintf(mensaje_final, sizeof(mensaje_final),
+        //         "%s: %s", nombre_usuario, mensaje);
 
 
         //log_info(logger, "Enviando mensaje: %s", mensaje_final);
