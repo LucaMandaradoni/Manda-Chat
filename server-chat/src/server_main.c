@@ -8,6 +8,8 @@ t_list* usuarios_conectados;
 int main() {
 
     logger = iniciar_logger();
+
+    log_info(logger, "path es /home/luca/Manda-Chat/server-chat/src/server.config");
     config = iniciar_config("/home/luca/Manda-Chat/server-chat/src/server.config");
     
     char* puerto = config_get_string_value(config, "PUERTO_ESCUCHA");
