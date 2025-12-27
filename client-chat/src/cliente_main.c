@@ -7,7 +7,7 @@ int main() {
 
     logger = iniciar_logger();    
     log_info(logger, "path es /home/luca/Manda-Chat/client-chat/src/cliente.config");
-    config = iniciar_config("/home/utnso/Manda-Chat/client-chat/src/cliente.config");
+    config = iniciar_config("/home/luca/Manda-Chat/client-chat/src/cliente.config");
 
     //char* puerto    = config_get_string_value(config, "PUERTO_SERVER");
     //char* ip        = config_get_string_value(config, "IP_SERVER");
