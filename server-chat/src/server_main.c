@@ -8,7 +8,7 @@ t_list* usuarios_conectados;
 int main() {
 
     logger = iniciar_logger();
-    config = iniciar_config("/home/utnso/Manda-Chat/server-chat/src/server.config");
+    config = iniciar_config("/home/luca/Manda-Chat/server-chat/src/server.config");
     
     char* puerto = config_get_string_value(config, "PUERTO_ESCUCHA");
     char* ip        = config_get_string_value(config, "IP_SERVER");
