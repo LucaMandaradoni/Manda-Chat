@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-
-#!/bin/bash
-
-#!/bin/bash
 set -e
 
 echo "Instalando Manda-Chat..."
@@ -34,7 +30,13 @@ cd ..
 
 # 4. Compilar proyecto
 echo "Compilando..."
+cd server-chat
 make
+cd ..
+
+cd client-chat
+make
+cd ..
 
 # 5. Permisos
 chmod +x server-chat/bin/server-chat
